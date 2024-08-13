@@ -6,8 +6,8 @@ import os
 from datetime import datetime
  
 # Login credentials
-usernames = os.getenv('VAULT_USERNAME')
-passwords = os.getenv('VAULT_PASSWORD')
+usernames = ["dhruvgogri014@gmail.com"]
+passwords = ["Dg9892211065@"]
  
 def login_and_download_file(url, username, password, file_suffix):
     driver = webdriver.Chrome()
