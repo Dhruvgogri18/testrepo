@@ -8,5 +8,5 @@ PASSWORD=$(vault kv get -field=password secret/data/myapp)
 export VAULT_USERNAME=$USERNAME
 export VAULT_PASSWORD=$PASSWORD
 # Optional: Print the fetched credentials (for debugging)
-echo "Fetched Username: $VAULT_USERNAME
-echo "Fetched Password: $VAULT_PASSWORD
+echo "export VAULT_USERNAME=$USERNAME" > secrets-output/secrets.sh
+echo "export VAULT_PASSWORD=$PASSWORD" >> secrets-output/secrets.sh
