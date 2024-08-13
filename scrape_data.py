@@ -10,7 +10,8 @@ usernames = ['dhruvgogri014@gmail.com']
 passwords = ['Dg9892211065@']
  
 def login_and_download_file(url, username, password, file_suffix):
-    driver = webdriver.Chrome()
+    chrome_driver_path = "/usr/local/bin/chromedriver"
+    driver = webdriver.Chrome(executable_path=chrome_driver_path)
     driver.maximize_window()
     driver.get(url)
  
