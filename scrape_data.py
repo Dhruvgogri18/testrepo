@@ -1,77 +1,55 @@
-import requests
-import pandas as pd
-from bs4 import BeautifulSoup
-# Replace with your Screener.in login credentials
-email = "dhruvgogri014@gmail.com"
-password = "Dg9892211065@"
-# Start a session
-session = requests.Session()
-# Get the login page to retrieve the CSRF token
-login_url = "https://www.screener.in/login/?"
-login_page = session.get(login_url)
-soup = BeautifulSoup(login_page.content, 'html.parser')
-# Find the CSRF token in the login form (usually in a hidden input field)
-csrf_token = soup.find('input', {'name': 'csrfmiddlewaretoken'})['value']
-# Prepare the login payload
-login_payload = {
-   'username': email,
-   'password': password,
-   'csrfmiddlewaretoken': csrf_token
-}
-# Include the Referer header as required
-headers = {
-   'Referer': login_url,
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
-}
-# Send the login request
-response = session.post(login_url, data=login_payload, headers=headers)
-print(response.url)
-# Check if login was successful
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import os
+from datetime import datetime
  
-if response.url == "https://www.screener.in/dash/":
-    print("Login successful")
-   # Now navigate to the Reliance company page
-    search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
-    search_response = session.get(search_url)
-    if search_response.status_code == 200:
+# Login credentials
+usernames = ["dhruvgogri014@gmail.com"]
+passwords = ["Dg9892211065@"]
+ 
+def login_and_download_file(url, username, password, file_suffix):
+    driver = webdriver.Chrome()
+    driver.maximize_window()
+    driver.get(url)
+ 
+    try:
+        # Log in
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//*[contains(concat( " ", @class, " " ), concat( " ", "account", " " ))]'))
+        ).click()
+ 
+        email_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//*[(@id = "id_username")]'))
+        )
+        password_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//*[(@id = "id_password")]'))
+        )
+ 
+        email_input.send_keys(username)
+        password_input.send_keys(password)
+ 
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//*[contains(concat( " ", @class, " " ), concat( " ", "icon-user", " " ))]'))
+        ).click()
+ 
+        # Navigate to the desired page
+        driver.get("https://www.screener.in/company/RELIANCE/consolidated/")
        
-        print("Reliance data retrieved successfully")
-        soup = BeautifulSoup(search_response.content, 'html.parser')
+        # Wait for the download button to be clickable and click it
+        download_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '/html/body/main/div[3]/div[1]/form/button'))
+        )
+        download_button.click()
  
-        table = soup.find('table' , {'class': 'data-table responsive-text-nowrap'})
+        # Wait for download to complete (or check for a file download indication)
+        WebDriverWait(driver, 30).until(EC.staleness_of(download_button))  # Wait until the button is no longer clickable
  
-        headers = [th.text.strip() for th in table.find_all('th')]
+    finally:
+        driver.quit()
  
-        rows = table.find_all('tr')
-        row_data = []
+if __name__ == '__main__':
+    for i, (username, password) in enumerate(zip(usernames, passwords)):
+        login_and_download_file("https://www.screener.in/", username, password, i)
  
-        for row in rows[1:]:
-            cols = row.find_all('td')
-            cols = [col.text.strip() for col in cols]
-            row_data.append(cols)
- 
-        df = pd.DataFrame(row_data , columns=headers)
-        print(df)
-        df.to_csv('profit_and_loss.csv' , index=False)
-       
- 
- 
- 
- 
-    #    # Find the Excel download link
-    #     excel_link = soup.find('button',{'aria-label' : 'Export to Excel'} )
-    #     print(excel_link)
-    #     if excel_link:
-    #         excel_url = "https://www.screener.in" + excel_link['formaction']
-    #         print(excel_url)
-    #         excel_response = session.get(excel_url,headers=headers)
-    #        # Save the Excel file
-    #         with open("Reliance.xlsx", "wb") as excel_file:
-    #            excel_file.write(excel_response.content)
-    #         print("Excel file downloaded successfully")
-    #     else:
-    #         print("Failed to find the Excel download link.")
-    # else:
-    #    print("Failed to retrieve Reliance data. Status Code:", search_response.status_code)
-else:
-   print("Login failed. Response URL:", response.url)
