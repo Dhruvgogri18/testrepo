@@ -51,14 +51,12 @@ def scrape_reliance_data(session):
         return None
 
 def clean_and_convert(value):
-    """
-    Clean and convert a string value to a float, handling common formatting issues.
-    """
     if isinstance(value, str):
-        # Remove commas and any non-numeric characters
         value = value.replace(',', '').replace('₹', '').replace('%', '').strip()
+        if value == '':
+            return None
         try:
-            return float(value) if value else None
+            return float(value)
         except ValueError:
             return None
     elif isinstance(value, (int, float)):
