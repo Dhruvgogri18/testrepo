@@ -59,27 +59,48 @@ def save_to_mysql(df, db, user, password, host, port):
             port=port
         )
         cursor = conn.cursor()
-
-        # Drop and create table
+        
+        # Create a table with additional columns if necessary
         cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
         cursor.execute("""
             CREATE TABLE profit_and_loss (
-                year TEXT,
-                sales TEXT,
-                expenses TEXT,
-                operating_profit TEXT,
-                profit_before_tax TEXT,
-                net_profit TEXT
+                date_period VARCHAR(20),
+                sales DECIMAL(20, 2),
+                expenses DECIMAL(20, 2),
+                operating_profit DECIMAL(20, 2),
+                opm_percentage DECIMAL(5, 2),
+                other_income DECIMAL(20, 2),
+                interest DECIMAL(20, 2),
+                depreciation DECIMAL(20, 2),
+                profit_before_tax DECIMAL(20, 2),
+                tax_percentage DECIMAL(5, 2),
+                net_profit DECIMAL(20, 2),
+                eps DECIMAL(20, 2)
             );
         """)
-
-        # Insert data
+        
         for index, row in df.iterrows():
-            print(f"Inserting row: {row}")
+            # Convert percentage strings to decimal values
+            opm_percentage = float(row['OPM %'].strip('%')) / 100 if 'OPM %' in row and row['OPM %'] != '-' else None
+            tax_percentage = float(row['Tax %'].strip('%')) / 100 if 'Tax %' in row and row['Tax %'] != '-' else None
+
             cursor.execute("""
-                INSERT INTO profit_and_loss (year, sales, expenses, operating_profit, profit_before_tax, net_profit)
-                VALUES (%s, %s, %s, %s, %s, %s);
-            """, tuple(row))
+                INSERT INTO profit_and_loss (date_period, sales, expenses, operating_profit, opm_percentage, other_income, interest, depreciation, profit_before_tax, tax_percentage, net_profit, eps)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+            """, (
+                index,  # or some date/period string
+                row.get('SalesÂ+', 0).replace(',', '').replace('Â', ''), 
+                row.get('ExpensesÂ+', 0).replace(',', '').replace('Â', ''), 
+                row.get('Operating Profit', 0).replace(',', '').replace('Â', ''), 
+                opm_percentage,
+                row.get('Other IncomeÂ+', 0).replace(',', '').replace('Â', ''), 
+                row.get('Interest', 0).replace(',', '').replace('Â', ''), 
+                row.get('Depreciation', 0).replace(',', '').replace('Â', ''), 
+                row.get('Profit before tax', 0).replace(',', '').replace('Â', ''), 
+                tax_percentage,
+                row.get('Net ProfitÂ+', 0).replace(',', '').replace('Â', ''), 
+                row.get('EPS in Rs', 0).replace(',', '').replace('Â', '')
+            ))
         
         conn.commit()
         cursor.close()
