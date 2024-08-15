@@ -49,6 +49,23 @@ def scrape_reliance_data(session):
         print("Failed to retrieve Reliance data")
         return None
 
+def clean_and_convert(value):
+    """
+    Convert a string value to a float, handling common formatting issues.
+    """
+    if isinstance(value, str):
+        # Remove commas, currency symbols, and non-numeric characters
+        value = value.replace(',', '').replace('Â ', '').replace('₹', '').strip()
+        # Convert to float, handle percentage separately
+        try:
+            return float(value.rstrip('%'))
+        except ValueError:
+            return None
+    elif isinstance(value, (int, float)):
+        return float(value)
+    else:
+        return None
+
 def save_to_mysql(df, db, user, password, host, port):
     try:
         conn = mysql.connector.connect(
@@ -60,56 +77,59 @@ def save_to_mysql(df, db, user, password, host, port):
         )
         cursor = conn.cursor()
         
-        # Create a table with appropriate columns
+        # Create a table with appropriate columns using FLOAT and a VARCHAR for the date period
         cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
         cursor.execute("""
             CREATE TABLE profit_and_loss (
                 date_period VARCHAR(20),
-                sales DECIMAL(20, 2),
-                expenses DECIMAL(20, 2),
-                operating_profit DECIMAL(20, 2),
-                opm_percentage DECIMAL(5, 2),
-                other_income DECIMAL(20, 2),
-                interest DECIMAL(20, 2),
-                depreciation DECIMAL(20, 2),
-                profit_before_tax DECIMAL(20, 2),
-                tax_percentage DECIMAL(5, 2),
-                net_profit DECIMAL(20, 2),
-                eps DECIMAL(20, 2)
+                sales FLOAT,
+                expenses FLOAT,
+                operating_profit FLOAT,
+                opm_percentage FLOAT,
+                other_income FLOAT,
+                interest FLOAT,
+                depreciation FLOAT,
+                profit_before_tax FLOAT,
+                tax_percentage FLOAT,
+                net_profit FLOAT,
+                eps FLOAT
             );
         """)
         
+        # Iterate over rows and insert data into MySQL table
         for index, row in df.iterrows():
-            # Handle missing or non-string values
-            def convert_to_number(value):
-                try:
-                    if isinstance(value, str):
-                        return float(value.replace(',', '').replace('Â ', ''))
-                    else:
-                        return float(value)
-                except (ValueError, TypeError):
-                    return None
-
-            # Convert percentage strings to decimal values
-            opm_percentage = convert_to_number(row.get('OPM %', '').strip('%')) / 100 if 'OPM %' in row and row['OPM %'] != '-' else None
-            tax_percentage = convert_to_number(row.get('Tax %', '').strip('%')) / 100 if 'Tax %' in row and row['Tax %'] != '-' else None
+            # Extract date period as index
+            date_period = index
+            
+            # Convert and clean data
+            sales = clean_and_convert(row.get('SalesÂ +', ''))
+            expenses = clean_and_convert(row.get('ExpensesÂ +', ''))
+            operating_profit = clean_and_convert(row.get('Operating Profit', ''))
+            opm_percentage = clean_and_convert(row.get('OPM %', '')) / 100 if row.get('OPM %', '') != '-' else None
+            other_income = clean_and_convert(row.get('Other IncomeÂ +', ''))
+            interest = clean_and_convert(row.get('Interest', ''))
+            depreciation = clean_and_convert(row.get('Depreciation', ''))
+            profit_before_tax = clean_and_convert(row.get('Profit before tax', ''))
+            tax_percentage = clean_and_convert(row.get('Tax %', '')) / 100 if row.get('Tax %', '') != '-' else None
+            net_profit = clean_and_convert(row.get('Net ProfitÂ +', ''))
+            eps = clean_and_convert(row.get('EPS in Rs', ''))
 
             cursor.execute("""
                 INSERT INTO profit_and_loss (date_period, sales, expenses, operating_profit, opm_percentage, other_income, interest, depreciation, profit_before_tax, tax_percentage, net_profit, eps)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
-                index,  # or some date/period string
-                convert_to_number(row.get('SalesÂ +', '')),
-                convert_to_number(row.get('ExpensesÂ +', '')), 
-                convert_to_number(row.get('Operating Profit', '')), 
+                date_period,
+                sales,
+                expenses,
+                operating_profit,
                 opm_percentage,
-                convert_to_number(row.get('Other IncomeÂ +', '')), 
-                convert_to_number(row.get('Interest', '')), 
-                convert_to_number(row.get('Depreciation', '')), 
-                convert_to_number(row.get('Profit before tax', '')), 
+                other_income,
+                interest,
+                depreciation,
+                profit_before_tax,
                 tax_percentage,
-                convert_to_number(row.get('Net ProfitÂ +', '')), 
-                convert_to_number(row.get('EPS in Rs', ''))
+                net_profit,
+                eps
             ))
         
         conn.commit()
