@@ -1,10 +1,8 @@
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-import psycopg2
-import argparse
 import mysql.connector
-from mysql.connector import Error
+import argparse
 
 def login_to_screener(email, password):
     session = requests.Session()
@@ -36,6 +34,8 @@ def scrape_reliance_data(session):
         print("Reliance data retrieved successfully")
         soup = BeautifulSoup(search_response.content, 'html.parser')
         table = soup.find('table', {'class': 'data-table responsive-text-nowrap'})
+        
+        # Extract headers and data
         headers = [th.text.strip() for th in table.find_all('th')]
         rows = table.find_all('tr')
         row_data = []
@@ -43,10 +43,19 @@ def scrape_reliance_data(session):
             cols = row.find_all('td')
             cols = [col.text.strip() for col in cols]
             row_data.append(cols)
-        df = pd.DataFrame(row_data, columns=headers)
+
+        # Create a DataFrame and transpose it
+        df = pd.DataFrame(row_data, columns=headers).transpose()
+        new_header = df.iloc[0]  # first row as header
+        df = df[1:]  # take the data less the header row
+        df.columns = new_header  # set the header row as the df header
         
-        # Print the DataFrame columns for debugging
-        print("Columns in DataFrame:", df.columns)
+        # Reset the index to add it as the 'Date' column
+        df = df.reset_index().rename(columns={'index': 'Date'})
+        
+        # Print the DataFrame for debugging
+        print("Transposed DataFrame:", df)
+        
         return df
     else:
         print("Failed to retrieve Reliance data")
@@ -65,13 +74,14 @@ def save_to_mysql(df, db, user, password, host, port):
         cursor.execute("DROP TABLE IF EXISTS financial_data;")
         cursor.execute("""
             CREATE TABLE financial_data (
+                `Date` VARCHAR(255),
                 `Sales +` VARCHAR(255),
                 `Expenses +` VARCHAR(255),
                 `Operating Profit` VARCHAR(255),
                 `OPM %` VARCHAR(255),
                 `Other Income +` VARCHAR(255),
-                Interest VARCHAR(255),
-                Depreciation VARCHAR(255),
+                `Interest` VARCHAR(255),
+                `Depreciation` VARCHAR(255),
                 `Profit before tax` VARCHAR(255),
                 `Tax %` VARCHAR(255),
                 `Net Profit +` VARCHAR(255),
@@ -82,11 +92,12 @@ def save_to_mysql(df, db, user, password, host, port):
         for index, row in df.iterrows():
             cursor.execute("""
                 INSERT INTO financial_data (
-                  `Sales +`, `Expenses +`, `Operating Profit`, `OPM %`, `Other Income +`,
+                    `Date`, `Sales +`, `Expenses +`, `Operating Profit`, `OPM %`, `Other Income +`,
                     Interest, Depreciation, `Profit before tax`, `Tax %`, `Net Profit +`, `EPS in Rs`
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
+                row['Date'],
                 row['Sales +'],
                 row['Expenses +'],
                 row['Operating Profit'],
@@ -103,7 +114,7 @@ def save_to_mysql(df, db, user, password, host, port):
         cursor.close()
         conn.close()
         print("Data saved to MySQL")
-    except Exception as e:
+    except Error as e:
         print(f"Error: {e}")
 
 if __name__ == "__main__":
