@@ -89,8 +89,12 @@ def save_to_mysql(df, db, user, password, host, port):
                 `EPS in Rs` VARCHAR(255)
             );
         """)
-        
+
+        # Strip whitespace from column names
+        df.columns = df.columns.str.strip()
+
         for index, row in df.iterrows():
+            print(f"Row keys: {row.keys()}")  # Debugging line to print available keys
             cursor.execute("""
                 INSERT INTO financial_data (
                     `Date`, `Sales +`, `Expenses +`, `Operating Profit`, `OPM %`, `Other Income +`,
@@ -98,18 +102,18 @@ def save_to_mysql(df, db, user, password, host, port):
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
-                row['Date'],
-                row['Sales +'],
-                row['Expenses +'],
-                row['Operating Profit'],
-                row['OPM %'],
-                row['Other Income +'],
-                row['Interest'],
-                row['Depreciation'],
-                row['Profit before tax'],
-                row['Tax %'],
-                row['Net Profit +'],
-                row['EPS in Rs']
+                row.get('Date', None),
+                row.get('Sales +', None),
+                row.get('Expenses +', None),
+                row.get('Operating Profit', None),
+                row.get('OPM %', None),
+                row.get('Other Income +', None),
+                row.get('Interest', None),
+                row.get('Depreciation', None),
+                row.get('Profit before tax', None),
+                row.get('Tax %', None),
+                row.get('Net Profit +', None),
+                row.get('EPS in Rs', None)
             ))
         conn.commit()
         cursor.close()
@@ -117,6 +121,7 @@ def save_to_mysql(df, db, user, password, host, port):
         print("Data saved to MySQL")
     except Error as e:
         print(f"Error: {e}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scrape and store Reliance data")
