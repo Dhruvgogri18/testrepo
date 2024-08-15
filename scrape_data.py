@@ -59,6 +59,8 @@ def save_to_mysql(df, db, user, password, host, port):
             port=port
         )
         cursor = conn.cursor()
+
+        # Drop and create table
         cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
         cursor.execute("""
             CREATE TABLE profit_and_loss (
@@ -70,11 +72,15 @@ def save_to_mysql(df, db, user, password, host, port):
                 net_profit TEXT
             );
         """)
+
+        # Insert data
         for index, row in df.iterrows():
+            print(f"Inserting row: {row}")
             cursor.execute("""
                 INSERT INTO profit_and_loss (year, sales, expenses, operating_profit, profit_before_tax, net_profit)
                 VALUES (%s, %s, %s, %s, %s, %s);
             """, tuple(row))
+        
         conn.commit()
         cursor.close()
         conn.close()
