@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import mysql.connector
+from mysql.connector import Error
 import argparse
 
 def login_to_screener(email, password):
@@ -53,8 +54,8 @@ def scrape_reliance_data(session):
         # Reset the index to add it as the 'Date' column
         df = df.reset_index().rename(columns={'index': 'Date'})
         
-        # Print the DataFrame for debugging
-        print("Transposed DataFrame:", df)
+        # Print the DataFrame columns for debugging
+        print("Transposed DataFrame Columns:", df.columns)
         
         return df
     else:
@@ -95,7 +96,7 @@ def save_to_mysql(df, db, user, password, host, port):
                     `Date`, `Sales +`, `Expenses +`, `Operating Profit`, `OPM %`, `Other Income +`,
                     Interest, Depreciation, `Profit before tax`, `Tax %`, `Net Profit +`, `EPS in Rs`
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
                 row['Date'],
                 row['Sales +'],
