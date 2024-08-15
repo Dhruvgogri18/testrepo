@@ -44,7 +44,9 @@ def scrape_reliance_data(session):
             cols = [col.text.strip() for col in cols]
             row_data.append(cols)
         df = pd.DataFrame(row_data, columns=headers)
-        print(df)
+        
+        # Print the DataFrame columns for debugging
+        print("Columns in DataFrame:", df.columns)
         return df
     else:
         print("Failed to retrieve Reliance data")
