@@ -3,6 +3,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import mysql.connector
 from mysql.connector import Error
+import argparse
 
 def login_to_screener(email, password):
     session = requests.Session()
