@@ -50,20 +50,6 @@ def scrape_reliance_data(session):
         print("Failed to retrieve Reliance data")
         return None
 
-def clean_and_convert(value):
-    if isinstance(value, str):
-        value = value.replace(',', '').replace('₹', '').replace('%', '').strip()
-        if value == '':
-            return None
-        try:
-            return float(value)
-        except ValueError:
-            return None
-    elif isinstance(value, (int, float)):
-        return float(value)
-    else:
-        return None
-
 def save_to_mysql(df, db, user, password, host, port):
     try:
         conn = mysql.connector.connect(
@@ -74,66 +60,44 @@ def save_to_mysql(df, db, user, password, host, port):
             port=port
         )
         cursor = conn.cursor()
-        
-        # Create table with appropriate columns
-        cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
+        cursor.execute("DROP TABLE IF EXISTS financial_data;")
         cursor.execute("""
-            CREATE TABLE profit_and_loss (
-                date_period VARCHAR(20),
+            CREATE TABLE financial_data (
+                date_period VARCHAR(255),
                 sales FLOAT,
                 expenses FLOAT,
                 operating_profit FLOAT,
-                opm_percentage FLOAT,
+                opm_percent FLOAT,
                 other_income FLOAT,
                 interest FLOAT,
                 depreciation FLOAT,
                 profit_before_tax FLOAT,
-                tax_percentage FLOAT,
+                tax_percent FLOAT,
                 net_profit FLOAT,
                 eps FLOAT
             );
         """)
-        
-        # Insert data into MySQL table
         for index, row in df.iterrows():
-            date_period = index
-            
-            # Convert and clean data
-            sales = clean_and_convert(row.get('SalesÂ +', ''))
-            expenses = clean_and_convert(row.get('ExpensesÂ +', ''))
-            operating_profit = clean_and_convert(row.get('Operating Profit', ''))
-            opm_percentage = clean_and_convert(row.get('OPM %', ''))
-            opm_percentage = opm_percentage / 100 if opm_percentage is not None else None
-            other_income = clean_and_convert(row.get('Other IncomeÂ +', ''))
-            interest = clean_and_convert(row.get('Interest', ''))
-            depreciation = clean_and_convert(row.get('Depreciation', ''))
-            profit_before_tax = clean_and_convert(row.get('Profit before tax', ''))
-            tax_percentage = clean_and_convert(row.get('Tax %', ''))
-            tax_percentage = tax_percentage / 100 if tax_percentage is not None else None
-            net_profit = clean_and_convert(row.get('Net ProfitÂ +', ''))
-            eps = clean_and_convert(row.get('EPS in Rs', ''))
-
-            # Debug: Print values before insertion
-            print(f"Inserting: {date_period}, {sales}, {expenses}, {operating_profit}, {opm_percentage}, {other_income}, {interest}, {depreciation}, {profit_before_tax}, {tax_percentage}, {net_profit}, {eps}")
-
             cursor.execute("""
-                INSERT INTO profit_and_loss (date_period, sales, expenses, operating_profit, opm_percentage, other_income, interest, depreciation, profit_before_tax, tax_percentage, net_profit, eps)
+                INSERT INTO financial_data (
+                    date_period, sales, expenses, operating_profit, opm_percent, other_income,
+                    interest, depreciation, profit_before_tax, tax_percent, net_profit, eps
+                )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
-                date_period,
-                sales,
-                expenses,
-                operating_profit,
-                opm_percentage,
-                other_income,
-                interest,
-                depreciation,
-                profit_before_tax,
-                tax_percentage,
-                net_profit,
-                eps
+                row.get('date_period'),
+                float(row.get('sales', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('expenses', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('operating_profit', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('OPM %', '0').replace('%', '').replace('Â', '') or 0),
+                float(row.get('other_income', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('interest', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('depreciation', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('profit_before_tax', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('Tax %', '0').replace('%', '').replace('Â', '') or 0),
+                float(row.get('net_profit', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('EPS in Rs', '0').replace(',', '').replace('Â', '') or 0)
             ))
-
         conn.commit()
         cursor.close()
         conn.close()
