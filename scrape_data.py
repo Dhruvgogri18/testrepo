@@ -86,7 +86,7 @@ def save_to_mysql(df, db, user, password, host, port):
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
                 row.get('date_period'),
-                float(row.get('sales', '0').replace(',', '').replace('Â', '') or 0),
+                float(row.get('Sales +', '0').replace(',', '').replace('Â', '') or 0),
                 float(row.get('expenses', '0').replace(',', '').replace('Â', '') or 0),
                 float(row.get('operating_profit', '0').replace(',', '').replace('Â', '') or 0),
                 float(row.get('OPM %', '0').replace('%', '').replace('Â', '') or 0),
