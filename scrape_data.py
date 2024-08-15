@@ -60,7 +60,7 @@ def save_to_mysql(df, db, user, password, host, port):
         )
         cursor = conn.cursor()
         
-        # Create a table with additional columns if necessary
+        # Create a table with appropriate columns
         cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
         cursor.execute("""
             CREATE TABLE profit_and_loss (
@@ -80,26 +80,36 @@ def save_to_mysql(df, db, user, password, host, port):
         """)
         
         for index, row in df.iterrows():
+            # Handle missing or non-string values
+            def convert_to_number(value):
+                try:
+                    if isinstance(value, str):
+                        return float(value.replace(',', '').replace('Â ', ''))
+                    else:
+                        return float(value)
+                except (ValueError, TypeError):
+                    return None
+
             # Convert percentage strings to decimal values
-            opm_percentage = float(row['OPM %'].strip('%')) / 100 if 'OPM %' in row and row['OPM %'] != '-' else None
-            tax_percentage = float(row['Tax %'].strip('%')) / 100 if 'Tax %' in row and row['Tax %'] != '-' else None
+            opm_percentage = convert_to_number(row.get('OPM %', '').strip('%')) / 100 if 'OPM %' in row and row['OPM %'] != '-' else None
+            tax_percentage = convert_to_number(row.get('Tax %', '').strip('%')) / 100 if 'Tax %' in row and row['Tax %'] != '-' else None
 
             cursor.execute("""
                 INSERT INTO profit_and_loss (date_period, sales, expenses, operating_profit, opm_percentage, other_income, interest, depreciation, profit_before_tax, tax_percentage, net_profit, eps)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
                 index,  # or some date/period string
-                row.get('SalesÂ+', 0).replace(',', '').replace('Â', ''), 
-                row.get('ExpensesÂ+', 0).replace(',', '').replace('Â', ''), 
-                row.get('Operating Profit', 0).replace(',', '').replace('Â', ''), 
+                convert_to_number(row.get('SalesÂ +', '')),
+                convert_to_number(row.get('ExpensesÂ +', '')), 
+                convert_to_number(row.get('Operating Profit', '')), 
                 opm_percentage,
-                row.get('Other IncomeÂ+', 0).replace(',', '').replace('Â', ''), 
-                row.get('Interest', 0).replace(',', '').replace('Â', ''), 
-                row.get('Depreciation', 0).replace(',', '').replace('Â', ''), 
-                row.get('Profit before tax', 0).replace(',', '').replace('Â', ''), 
+                convert_to_number(row.get('Other IncomeÂ +', '')), 
+                convert_to_number(row.get('Interest', '')), 
+                convert_to_number(row.get('Depreciation', '')), 
+                convert_to_number(row.get('Profit before tax', '')), 
                 tax_percentage,
-                row.get('Net ProfitÂ+', 0).replace(',', '').replace('Â', ''), 
-                row.get('EPS in Rs', 0).replace(',', '').replace('Â', '')
+                convert_to_number(row.get('Net ProfitÂ +', '')), 
+                convert_to_number(row.get('EPS in Rs', ''))
             ))
         
         conn.commit()
