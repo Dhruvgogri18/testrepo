@@ -77,7 +77,7 @@ def save_to_mysql(df, db, user, password, host, port):
         )
         cursor = conn.cursor()
         
-        # Create a table with appropriate columns
+        # Create table with appropriate columns
         cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
         cursor.execute("""
             CREATE TABLE profit_and_loss (
@@ -96,7 +96,7 @@ def save_to_mysql(df, db, user, password, host, port):
             );
         """)
         
-        # Insert data into the MySQL table
+        # Insert data into MySQL table
         for index, row in df.iterrows():
             date_period = index
             
@@ -115,6 +115,9 @@ def save_to_mysql(df, db, user, password, host, port):
             net_profit = clean_and_convert(row.get('Net ProfitÂ +', ''))
             eps = clean_and_convert(row.get('EPS in Rs', ''))
 
+            # Debug: Print values before insertion
+            print(f"Inserting: {date_period}, {sales}, {expenses}, {operating_profit}, {opm_percentage}, {other_income}, {interest}, {depreciation}, {profit_before_tax}, {tax_percentage}, {net_profit}, {eps}")
+
             cursor.execute("""
                 INSERT INTO profit_and_loss (date_period, sales, expenses, operating_profit, opm_percentage, other_income, interest, depreciation, profit_before_tax, tax_percentage, net_profit, eps)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
@@ -132,7 +135,7 @@ def save_to_mysql(df, db, user, password, host, port):
                 net_profit,
                 eps
             ))
-        
+
         conn.commit()
         cursor.close()
         conn.close()
