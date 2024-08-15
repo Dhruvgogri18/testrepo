@@ -62,12 +62,12 @@ def save_to_mysql(df, db, user, password, host, port):
         cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
         cursor.execute("""
             CREATE TABLE profit_and_loss (
-                year VARCHAR(255),
-                sales VARCHAR(255),
-                expenses VARCHAR(255),
-                operating_profit VARCHAR(255),
-                profit_before_tax VARCHAR(255),
-                net_profit VARCHAR(255)
+                year TEXT,
+                sales TEXT,
+                expenses TEXT,
+                operating_profit TEXT,
+                profit_before_tax TEXT,
+                net_profit TEXT
             );
         """)
         for index, row in df.iterrows():
@@ -79,7 +79,7 @@ def save_to_mysql(df, db, user, password, host, port):
         cursor.close()
         conn.close()
         print("Data saved to MySQL")
-    except Error as e:
+    except Exception as e:
         print(f"Error: {e}")
 
 if __name__ == "__main__":
