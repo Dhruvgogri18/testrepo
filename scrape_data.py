@@ -64,39 +64,40 @@ def save_to_mysql(df, db, user, password, host, port):
         cursor.execute("""
             CREATE TABLE financial_data (
                 date_period VARCHAR(255),
-                sales FLOAT,
-                expenses FLOAT,
-                operating_profit FLOAT,
-                opm_percent FLOAT,
-                other_income FLOAT,
-                interest FLOAT,
-                depreciation FLOAT,
-                profit_before_tax FLOAT,
-                tax_percent FLOAT,
-                net_profit FLOAT,
-                eps FLOAT
+                `Sales +` VARCHAR(255),
+                `Expenses +` VARCHAR(255),
+                `Operating Profit` VARCHAR(255),
+                `OPM %` VARCHAR(255),
+                `Other Income +` VARCHAR(255),
+                Interest VARCHAR(255),
+                Depreciation VARCHAR(255),
+                `Profit before tax` VARCHAR(255),
+                `Tax %` VARCHAR(255),
+                `Net Profit +` VARCHAR(255),
+                `EPS in Rs` VARCHAR(255)
             );
         """)
+        
         for index, row in df.iterrows():
             cursor.execute("""
                 INSERT INTO financial_data (
-                    date_period, sales, expenses, operating_profit, opm_percent, other_income,
-                    interest, depreciation, profit_before_tax, tax_percent, net_profit, eps
+                    date_period, `Sales +`, `Expenses +`, `Operating Profit`, `OPM %`, `Other Income +`,
+                    Interest, Depreciation, `Profit before tax`, `Tax %`, `Net Profit +`, `EPS in Rs`
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
-                row.get('date_period'),
-                float(row.get('Sales +', '0').replace(',', '').replace('Â', '') or 0),
-                float(row.get('expenses', '0').replace(',', '').replace('Â', '') or 0),
-                float(row.get('operating_profit', '0').replace(',', '').replace('Â', '') or 0),
-                float(row.get('OPM %', '0').replace('%', '').replace('Â', '') or 0),
-                float(row.get('other_income', '0').replace(',', '').replace('Â', '') or 0),
-                float(row.get('interest', '0').replace(',', '').replace('Â', '') or 0),
-                float(row.get('depreciation', '0').replace(',', '').replace('Â', '') or 0),
-                float(row.get('profit_before_tax', '0').replace(',', '').replace('Â', '') or 0),
-                float(row.get('Tax %', '0').replace('%', '').replace('Â', '') or 0),
-                float(row.get('net_profit', '0').replace(',', '').replace('Â', '') or 0),
-                float(row.get('EPS in Rs', '0').replace(',', '').replace('Â', '') or 0)
+                row['date_period'],
+                row['Sales +'],
+                row['Expenses +'],
+                row['Operating Profit'],
+                row['OPM %'],
+                row['Other Income +'],
+                row['Interest'],
+                row['Depreciation'],
+                row['Profit before tax'],
+                row['Tax %'],
+                row['Net Profit +'],
+                row['EPS in Rs']
             ))
         conn.commit()
         cursor.close()
