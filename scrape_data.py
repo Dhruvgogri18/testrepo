@@ -85,7 +85,6 @@ def save_to_mysql(df, db, user, password, host, port):
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
-                row['date_period'],
                 row['Sales +'],
                 row['Expenses +'],
                 row['Operating Profit'],
