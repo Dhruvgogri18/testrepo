@@ -3,7 +3,6 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import mysql.connector
 from mysql.connector import Error
-import argparse
 
 def login_to_screener(email, password):
     session = requests.Session()
@@ -52,7 +51,8 @@ def scrape_reliance_data(session):
         df.columns = new_header  # set the header row as the df header
         
         # Reset the index to add it as the 'Date' column
-        df = df.reset_index().rename(columns={'index': 'Date'})
+        df = df.reset_index().rename(columns={'index': 'Date'})    
+
         
         # Print the DataFrame columns for debugging
         print("Transposed DataFrame Columns:", df.columns)
@@ -74,46 +74,51 @@ def save_to_mysql(df, db, user, password, host, port):
         cursor = conn.cursor()
         cursor.execute("DROP TABLE IF EXISTS financial_data;")
         cursor.execute("""
-            CREATE TABLE financial_data (
-                `Date` VARCHAR(255),
-                `Sales +` VARCHAR(255),
-                `Expenses +` VARCHAR(255),
-                `Operating Profit` VARCHAR(255),
-                `OPM %` VARCHAR(255),
-                `Other Income +` VARCHAR(255),
-                `Interest` VARCHAR(255),
-                `Depreciation` VARCHAR(255),
-                `Profit before tax` VARCHAR(255),
-                `Tax %` VARCHAR(255),
-                `Net Profit +` VARCHAR(255),
-                `EPS in Rs` VARCHAR(255)
-            );
-        """)
+                CREATE TABLE financial_data (
+                    `Date` VARCHAR(255),
+                    `Sales` VARCHAR(255),
+                    `Expenses` VARCHAR(255),
+                    `OperatingProfit` VARCHAR(255),
+                    `OPM%` VARCHAR(255),
+                    `OtherIncome` VARCHAR(255),
+                    `Interest` VARCHAR(255),
+                    `Depreciation` VARCHAR(255),
+                    `Profitbeforetax` VARCHAR(255),
+                    `Tax%` VARCHAR(255),
+                    `NetProfit` VARCHAR(255),
+                    `EPSinRs` VARCHAR(255)
+                );
+            """)
 
         # Strip whitespace from column names
-        df.columns = df.columns.str.strip()
+        df.columns = df.columns.str.replace(r'[^a-zA-Z0-9]', '', regex=True)
+        print(df.columns)
+
+        df = df.drop(columns=['RawPDF'])
 
         for index, row in df.iterrows():
-            print(f"Row keys: {row.keys()}")  # Debugging line to print available keys
+            # Debugging output
+            print(f"Inserting row {index}: {row.values}")
+            
             cursor.execute("""
                 INSERT INTO financial_data (
-                    `Date`, `Sales +`, `Expenses +`, `Operating Profit`, `OPM %`, `Other Income +`,
-                    Interest, Depreciation, `Profit before tax`, `Tax %`, `Net Profit +`, `EPS in Rs`
+                    `Date`, `Sales`, `Expenses`, `OperatingProfit`, `OPM%`, `OtherIncome`,
+                    Interest, Depreciation, `Profitbeforetax`, `Tax%`, `NetProfit`, `EPSinRs`
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """, (
                 row.get('Date', None),
-                row.get('Sales +', None),
-                row.get('Expenses +', None),
-                row.get('Operating Profit', None),
-                row.get('OPM %', None),
-                row.get('Other Income +', None),
+                row.get('Sales', None),
+                row.get('Expenses', None),
+                row.get('OperatingProfit', None),
+                row.get('OPM', None),
+                row.get('OtherIncome', None),
                 row.get('Interest', None),
                 row.get('Depreciation', None),
-                row.get('Profit before tax', None),
-                row.get('Tax %', None),
-                row.get('Net Profit +', None),
-                row.get('EPS in Rs', None)
+                row.get('Profitbeforetax', None),
+                row.get('Tax', None),
+                row.get('NetProfit', None),
+                row.get('EPSinRs', None)
             ))
         conn.commit()
         cursor.close()
