@@ -51,14 +51,13 @@ def scrape_reliance_data(session):
 
 def clean_and_convert(value):
     """
-    Convert a string value to a float, handling common formatting issues.
+    Clean and convert a string value to a float, handling common formatting issues.
     """
     if isinstance(value, str):
-        # Remove commas, currency symbols, and non-numeric characters
-        value = value.replace(',', '').replace('Â ', '').replace('₹', '').strip()
-        # Convert to float, handle percentage separately
+        # Remove commas and any non-numeric characters
+        value = value.replace(',', '').replace('₹', '').replace('%', '').strip()
         try:
-            return float(value.rstrip('%'))
+            return float(value) if value else None
         except ValueError:
             return None
     elif isinstance(value, (int, float)):
@@ -77,7 +76,7 @@ def save_to_mysql(df, db, user, password, host, port):
         )
         cursor = conn.cursor()
         
-        # Create a table with appropriate columns using FLOAT and a VARCHAR for the date period
+        # Create a table with appropriate columns
         cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
         cursor.execute("""
             CREATE TABLE profit_and_loss (
@@ -96,21 +95,22 @@ def save_to_mysql(df, db, user, password, host, port):
             );
         """)
         
-        # Iterate over rows and insert data into MySQL table
+        # Insert data into the MySQL table
         for index, row in df.iterrows():
-            # Extract date period as index
             date_period = index
             
             # Convert and clean data
             sales = clean_and_convert(row.get('SalesÂ +', ''))
             expenses = clean_and_convert(row.get('ExpensesÂ +', ''))
             operating_profit = clean_and_convert(row.get('Operating Profit', ''))
-            opm_percentage = clean_and_convert(row.get('OPM %', '')) / 100 if row.get('OPM %', '') != '-' else None
+            opm_percentage = clean_and_convert(row.get('OPM %', ''))
+            opm_percentage = opm_percentage / 100 if opm_percentage is not None else None
             other_income = clean_and_convert(row.get('Other IncomeÂ +', ''))
             interest = clean_and_convert(row.get('Interest', ''))
             depreciation = clean_and_convert(row.get('Depreciation', ''))
             profit_before_tax = clean_and_convert(row.get('Profit before tax', ''))
-            tax_percentage = clean_and_convert(row.get('Tax %', '')) / 100 if row.get('Tax %', '') != '-' else None
+            tax_percentage = clean_and_convert(row.get('Tax %', ''))
+            tax_percentage = tax_percentage / 100 if tax_percentage is not None else None
             net_profit = clean_and_convert(row.get('Net ProfitÂ +', ''))
             eps = clean_and_convert(row.get('EPS in Rs', ''))
 
