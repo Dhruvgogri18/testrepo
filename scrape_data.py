@@ -1,7 +1,10 @@
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
+import psycopg2
 import argparse
+import mysql.connector
+from mysql.connector import Error
 
 def login_to_screener(email, password):
     session = requests.Session()
@@ -46,15 +49,52 @@ def scrape_reliance_data(session):
         print("Failed to retrieve Reliance data")
         return None
 
+def save_to_mysql(df, db, user, password, host, port):
+    try:
+        conn = mysql.connector.connect(
+            database=db,
+            user=user,
+            password=password,
+            host=host,
+            port=port
+        )
+        cursor = conn.cursor()
+        cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
+        cursor.execute("""
+            CREATE TABLE profit_and_loss (
+                year VARCHAR(255),
+                sales VARCHAR(255),
+                expenses VARCHAR(255),
+                operating_profit VARCHAR(255),
+                profit_before_tax VARCHAR(255),
+                net_profit VARCHAR(255)
+            );
+        """)
+        for index, row in df.iterrows():
+            cursor.execute("""
+                INSERT INTO profit_and_loss (year, sales, expenses, operating_profit, profit_before_tax, net_profit)
+                VALUES (%s, %s, %s, %s, %s, %s);
+            """, tuple(row))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("Data saved to MySQL")
+    except Error as e:
+        print(f"Error: {e}")
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Scrape Reliance data")
+    parser = argparse.ArgumentParser(description="Scrape and store Reliance data")
     parser.add_argument('--email', required=True, help='Email for Screener.in')
     parser.add_argument('--password', required=True, help='Password for Screener.in')
+    parser.add_argument('--db', required=True, help='MySQL database name')
+    parser.add_argument('--user', required=True, help='MySQL username')
+    parser.add_argument('--pw', required=True, help='MySQL password')
+    parser.add_argument('--host', required=True, help='MySQL host')
+    parser.add_argument('--port', required=True, help='MySQL port')
     args = parser.parse_args()
 
     session = login_to_screener(args.email, args.password)
     if session:
         df = scrape_reliance_data(session)
         if df is not None:
-            print(df)
-            df.to_csv('reliance_profit_and_loss.csv', index=False)
+            save_to_mysql(df, args.db, args.user, args.pw, args.host, args.port)
