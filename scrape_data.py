@@ -29,96 +29,50 @@ def login_to_screener(email, password):
         return None
 
 def scrape_reliance_data(session):
-    search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
-    search_response = session.get(search_url)
-    if search_response.status_code == 200:
-        print("Reliance data retrieved successfully")
-        soup = BeautifulSoup(search_response.content, 'html.parser')
-        table = soup.find('table', {'class': 'data-table responsive-text-nowrap'})
-        
-        # Extract headers and data
-        headers = [th.text.strip() for th in table.find_all('th')]
-        rows = table.find_all('tr')
-        row_data = []
-        for row in rows[1:]:
-            cols = row.find_all('td')
-            cols = [col.text.strip() for col in cols]
-            row_data.append(cols)
-
-        # Create a DataFrame and transpose it
-        df = pd.DataFrame(row_data, columns=headers).transpose()
-        new_header = df.iloc[0]  # first row as header
-        df = df[1:]  # take the data less the header row
-        df.columns = new_header  # set the header row as the df header
-        
-        # Reset the index to add it as the 'Date' column
-        df = df.reset_index().rename(columns={'index': 'Date'})    
-        return df
-    else:
-        print("Failed to retrieve Reliance data")
-        return None
+   search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
+   search_response = session.get(search_url)
+   if search_response.status_code == 200:
+       print("Reliance data retrieved successfully")
+       soup = BeautifulSoup(search_response.content, 'html.parser')
+       table = soup.find('table', {'class': 'data-table responsive-text-nowrap'})
+       # Extract headers and data
+       headers = [th.text.strip() or f'Column_{i}' for i, th in enumerate(table.find_all('th'))]
+       rows = table.find_all('tr')
+       # Print headers for debugging
+       print("Extracted Headers:", headers)
+       row_data = []
+       for row in rows[1:]:
+           cols = row.find_all('td')
+           cols = [col.text.strip() for col in cols]
+           # Check if row data length matches header length
+           if len(cols) == len(headers):
+               row_data.append(cols)
+           else:
+               print(f"Row data length mismatch: {cols}")
+       # Create a DataFrame with sanitized headers
+       df = pd.DataFrame(row_data, columns=headers)
+       # Rename the first column to 'Narration'
+       if not df.empty:
+           df.columns = ['Narration'] + df.columns[1:].tolist()
+       # Drop the index column if it exists
+       df = df.reset_index(drop=True)
+       # Print the DataFrame columns and the first few rows for debugging
+       print(df.head())
+       return df
+   else:
+       print("Failed to retrieve Reliance data")
+       return None
 
 def save_to_mysql(df, db, user, password, host, port):
-    try:
-        conn = mysql.connector.connect(
-            database=db,
-            user=user,
-            password=password,
-            host=host,
-            port=port
-        )
-        cursor = conn.cursor()
-        cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
-        cursor.execute("""
-                CREATE TABLE profit_and_loss (
-                    `Date` VARCHAR(255),
-                    `Sales` VARCHAR(255),
-                    `Expenses` VARCHAR(255),
-                    `OperatingProfit` VARCHAR(255),
-                    `OPM%` VARCHAR(255),
-                    `OtherIncome` VARCHAR(255),
-                    `Interest` VARCHAR(255),
-                    `Depreciation` VARCHAR(255),
-                    `Profitbeforetax` VARCHAR(255),
-                    `Tax%` VARCHAR(255),
-                    `NetProfit` VARCHAR(255),
-                    `EPSinRs` VARCHAR(255)
-                );
-            """)
-
-        # Strip whitespace from column names
-        df.columns = df.columns.str.replace(r'[^a-zA-Z0-9]', '', regex=True)
-        df = df.drop(columns=['RawPDF'])
-
-        for index, row in df.iterrows():
-            # Debugging output
-            cursor.execute("""
-                INSERT INTO profit_and_loss(
-                    `Date`, `Sales`, `Expenses`, `OperatingProfit`, `OPM%`, `OtherIncome`,
-                    Interest, Depreciation, `Profitbeforetax`, `Tax%`, `NetProfit`, `EPSinRs`
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-            """, (
-                row.get('Date', None),
-                row.get('Sales', None),
-                row.get('Expenses', None),
-                row.get('OperatingProfit', None),
-                row.get('OPM', None),
-                row.get('OtherIncome', None),
-                row.get('Interest', None),
-                row.get('Depreciation', None),
-                row.get('Profitbeforetax', None),
-                row.get('Tax', None),
-                row.get('NetProfit', None),
-                row.get('EPSinRs', None)
-            ))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print("Data saved to MySQL")
-    except Error as e:
-        print(f"Error: {e}")
-
+   # Create an SQLAlchemy engine
+   engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
+   try:
+       df.to_sql('financial_data', con=engine, if_exists='replace', index=False)
+       print("Data saved to MySQL")
+   except SQLAlchemyError as e:
+       print(f"Error: {e}")
+   finally:
+       engine.dispose()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scrape and store Reliance data")
