@@ -36,7 +36,8 @@ def scrape_reliance_data(session):
    if search_response.status_code == 200:
        print("Reliance data retrieved successfully")
        soup = BeautifulSoup(search_response.content, 'html.parser')
-       table = soup.find('table', {'class': 'data-table responsive-text-nowrap'})
+       table1 = soup.find('section', {'id': 'profit-loss'})
+       table = table1.find('table')
        # Extract headers and data
        headers = [th.text.strip() or f'Column_{i}' for i, th in enumerate(table.find_all('th'))]
        rows = table.find_all('tr')
