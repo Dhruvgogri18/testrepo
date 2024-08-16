@@ -53,11 +53,6 @@ def scrape_reliance_data(session):
         
         # Reset the index to add it as the 'Date' column
         df = df.reset_index().rename(columns={'index': 'Date'})    
-
-        
-        # Print the DataFrame columns for debugging
-        print("Transposed DataFrame Columns:", df.columns)
-        
         return df
     else:
         print("Failed to retrieve Reliance data")
@@ -93,14 +88,10 @@ def save_to_mysql(df, db, user, password, host, port):
 
         # Strip whitespace from column names
         df.columns = df.columns.str.replace(r'[^a-zA-Z0-9]', '', regex=True)
-        print(df.columns)
-
         df = df.drop(columns=['RawPDF'])
 
         for index, row in df.iterrows():
             # Debugging output
-            print(f"Inserting row {index}: {row.values}")
-            
             cursor.execute("""
                 INSERT INTO financial_data (
                     `Date`, `Sales`, `Expenses`, `OperatingProfit`, `OPM%`, `OtherIncome`,
