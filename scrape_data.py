@@ -70,7 +70,7 @@ def save_to_mysql(df, db, user, password, host, port):
         cursor = conn.cursor()
         cursor.execute("DROP TABLE IF EXISTS financial_data;")
         cursor.execute("""
-                CREATE TABLE financial_data (
+                CREATE TABLE profit_and_loss (
                     `Date` VARCHAR(255),
                     `Sales` VARCHAR(255),
                     `Expenses` VARCHAR(255),
