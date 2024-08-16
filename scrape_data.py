@@ -69,7 +69,7 @@ def save_to_mysql(df, db, user, password, host, port):
    # Create an SQLAlchemy engine
    engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
    try:
-       df.to_sql('financial_data', con=engine, if_exists='replace', index=False)
+       df.to_sql('profit_and_loss', con=engine, if_exists='replace', index=False)
        print("Data saved to MySQL")
    except SQLAlchemyError as e:
        print(f"Error: {e}")
