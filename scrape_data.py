@@ -68,7 +68,7 @@ def save_to_mysql(df, db, user, password, host, port):
             port=port
         )
         cursor = conn.cursor()
-        cursor.execute("DROP TABLE IF EXISTS financial_data;")
+        cursor.execute("DROP TABLE IF EXISTS profit_and_loss;")
         cursor.execute("""
                 CREATE TABLE profit_and_loss (
                     `Date` VARCHAR(255),
@@ -93,7 +93,7 @@ def save_to_mysql(df, db, user, password, host, port):
         for index, row in df.iterrows():
             # Debugging output
             cursor.execute("""
-                INSERT INTO financial_data (
+                INSERT INTO profit_and_loss(
                     `Date`, `Sales`, `Expenses`, `OperatingProfit`, `OPM%`, `OtherIncome`,
                     Interest, Depreciation, `Profitbeforetax`, `Tax%`, `NetProfit`, `EPSinRs`
                 )
