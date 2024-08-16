@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 import mysql.connector
 from mysql.connector import Error
 import argparse
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 
 def login_to_screener(email, password):
     session = requests.Session()
