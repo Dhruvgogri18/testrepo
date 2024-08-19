@@ -60,7 +60,7 @@ def save_to_mysql(df, db, user, password, host, port):
    engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
    try:
        # Save the DataFrame to MySQL with the index as a column
-       df.to_sql('financial_data', con=engine, if_exists='replace', index=True, index_label='id')
+       df.to_sql('profit_and_loss', con=engine, if_exists='replace', index=True, index_label='id')
        print("Data saved to MySQL with index column")
    except SQLAlchemyError as e:
        print(f"Error: {e}")
