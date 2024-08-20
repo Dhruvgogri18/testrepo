@@ -72,7 +72,7 @@ def save_to_mysql(df, db, user, password, host, port):
            """
            # Execute the raw SQL command
            connection.execute(text(alter_table_sql))
-       print("Data saved to MySQL with id column set as primary key")
+       print("Data saved to MySQL")
    except SQLAlchemyError as e:
        print(f"Error: {e}")
    finally:
