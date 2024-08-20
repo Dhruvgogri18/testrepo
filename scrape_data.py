@@ -59,47 +59,24 @@ def scrape_reliance_data(session):
        return None
 
 def save_to_mysql(df, db, user, password, host, port):
-    engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
-
-    try:
-        # First, use pandas to create the table with initial data
-        df.to_sql('financial_data', con=engine, if_exists='replace', index=True, index_label='id', dtype={'id': Integer})
-
-        # Now modify the table to set the 'id' column as the primary key
-        with engine.connect() as connection:
-            # SQL command to add primary key constraint
-            alter_table_sql = """
-                ALTER TABLE financial_data
-                ADD PRIMARY KEY (id);
-            """
-            # Execute the raw SQL command
-            connection.execute(text(alter_table_sql))
-
-        print("Data saved to MySQL with id column set as primary key")
-    except SQLAlchemyError as e:
-        print(f"Error: {e}")
-    finally:
-        engine.dispose()
-       
-def save_to_mysql(df, db, user, password, host, port):
-    engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
-    try:
-        # First, use pandas to create the table with initial data
-        df.to_sql('financial_data', con=engine, if_exists='replace', index=True, index_label='id', dtype={'id': Integer})
-        # Now modify the table to set the 'id' column as the primary key
-        with engine.connect() as connection:
-            # SQL command to add primary key constraint
-            alter_table_sql = """
-                ALTER TABLE financial_data
-                ADD PRIMARY KEY (id);
-            """
-            # Execute the raw SQL command
-            connection.execute(text(alter_table_sql))
-        print("Data saved to MySQL")
-    except SQLAlchemyError as e:
-        print(f"Error: {e}")
-    finally:
-        engine.dispose()
+   engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
+   try:
+       # First, use pandas to create the table with initial data
+       df.to_sql('financial_data', con=engine, if_exists='replace', index=True, index_label='id', dtype={'id': Integer})
+       # Now modify the table to set the 'id' column as the primary key
+       with engine.connect() as connection:
+           # SQL command to add primary key constraint
+           alter_table_sql = """
+               ALTER TABLE financial_data
+               ADD PRIMARY KEY (id);
+           """
+           # Execute the raw SQL command
+           connection.execute(text(alter_table_sql))
+       print("Data saved to MySQL with id column set as primary key")
+   except SQLAlchemyError as e:
+       print(f"Error: {e}")
+   finally:
+       engine.dispose()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scrape and store Reliance data")
