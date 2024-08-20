@@ -15,7 +15,7 @@ def login_and_download_file(url, username, password, file_suffix):
    chrome_options.add_argument("--disable-dev-shm-usage")
    chrome_options.add_argument("--disable-gpu")
    # Explicit path to ChromeDriver
-   service = Service('/usr/local/bin/chromedriver-linux64')
+   service = Service('/usr/local/bin/chromedriver')
    driver = webdriver.Chrome(service=service, options=chrome_options)
    driver.get(url)
    try:
