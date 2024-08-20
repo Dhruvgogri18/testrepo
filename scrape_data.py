@@ -67,7 +67,7 @@ def save_to_mysql(df, db, user, password, host, port):
        with engine.connect() as connection:
            # SQL command to add primary key constraint
            alter_table_sql = """
-               ALTER TABLE financial_data
+               ALTER TABLE profit_and_loss
                ADD PRIMARY KEY (id);
            """
            # Execute the raw SQL command
