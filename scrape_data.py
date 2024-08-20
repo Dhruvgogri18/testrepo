@@ -31,49 +31,49 @@ def login_to_screener(email, password):
        print("Login failed")
        return None
 def scrape_reliance_data(session):
-   search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
-   search_response = session.get(search_url)
-   if search_response.status_code == 200:
-       print("Reliance data retrieved successfully")
-       soup = BeautifulSoup(search_response.content, 'html.parser')
-       table1 = soup.find('section', {'id': 'profit-loss'})
-       table = table1.find('table')
-       headers = [th.text.strip() or f'Column_{i}' for i, th in enumerate(table.find_all('th'))]
-       rows = table.find_all('tr')
-       row_data = []
-       for row in rows[1:]:
-           cols = row.find_all('td')
-           cols = [col.text.strip() for col in cols]
-           if len(cols) == len(headers):
-               row_data.append(cols)
-           else:
-               print(f"Row data length mismatch: {cols}")
-       df = pd.DataFrame(row_data, columns=headers)
-       if not df.empty:
-           df.columns = ['Narration'] + df.columns[1:].tolist()
-       df = df.reset_index(drop=True)
-       print(df.head())
-       return df
-   else:
-       print("Failed to retrieve Reliance data")
-       return None
+    search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
+    search_response = session.get(search_url)
+    if search_response.status_code == 200:
+        print("Reliance data retrieved successfully")
+        soup = BeautifulSoup(search_response.content, 'html.parser')
+        table1 = soup.find('section', {'id': 'profit-loss'})
+        table = table1.find('table')
+        headers = [th.text.strip() or f'Column_{i}' for i, th in enumerate(table.find_all('th'))]
+        rows = table.find_all('tr')
+        row_data = []
+        for row in rows[1:]:
+            cols = row.find_all('td')
+            cols = [col.text.strip() for col in cols]
+            if len(cols) == len(headers):
+                row_data.append(cols)
+            else:
+                print(f"Row data length mismatch: {cols}")
+        df = pd.DataFrame(row_data, columns=headers)
+        if not df.empty:
+            df.columns = ['Narration'] + df.columns[1:].tolist()
+        df = pd.melt(df, id_vars=['Narration'], var_name='Year', value_name='Value')
+        df = df.sort_values(by=['Narration', 'Year']).reset_index(drop=True)
+        print(df.head())
+        return df
+    else:
+        print("Failed to retrieve Reliance data")
+        return None
 
 def save_to_mysql(df, db, user, password, host, port):
-   engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
-   try:
-       df.to_sql('profit_and_loss', con=engine, if_exists='replace', index=True, index_label='id', dtype={'id': Integer})
-       with engine.connect() as connection:
-           # SQL command to add primary key constraint
-           alter_table_sql = """
-               ALTER TABLE profit_and_loss
-               ADD PRIMARY KEY (id);
-           """
-           connection.execute(text(alter_table_sql))
-       print("Data saved to MySQL")
-   except SQLAlchemyError as e:
-       print(f"Error: {e}")
-   finally:
-       engine.dispose()
+    engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
+    try:
+        df.to_sql('financial_data', con=engine, if_exists='replace', index=True, index_label='id', dtype={'id': Integer})
+        with engine.connect() as connection:
+            alter_table_sql = """
+                ALTER TABLE financial_data
+                ADD PRIMARY KEY (id);
+            """
+            connection.execute(text(alter_table_sql))
+        print("Data saved to MySQL with id column set as primary key")
+    except SQLAlchemyError as e:
+        print(f"Error: {e}")
+    finally:
+        engine.dispose()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scrape and store Reliance data")
