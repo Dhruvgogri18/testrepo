@@ -12,16 +12,11 @@ usernames = ["dhruvgogri014@gmail.com"]
 passwords = ["Dg9892211065@"]
  
 def login_and_download_file(url, username, password, file_suffix):
-    # Configure Chrome options
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')  # Run in headless mode
-    chrome_options.add_argument('--no-sandbox')  # Disable sandboxing
-    chrome_options.add_argument('--disable-dev-shm-usage')  # Disable shared memory usage
  
     # Path to ChromeDriver (add if not included in PATH)
     service = Service('/usr/local/bin/chromedriver-linux64/chromedriver')
  
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(service=service)
     driver.maximize_window()
     driver.get(url)
  
