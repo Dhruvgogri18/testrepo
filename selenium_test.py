@@ -86,8 +86,8 @@ def wait_for_file(download_dir, file_name, timeout=120):
            if file == file_name:
                return True
            if file.endswith(".crdownload"):
-               time.sleep(15)  
-       time.sleep(15) 
+               time.sleep(30)  
+       time.sleep(30) 
    return False
  
 if __name__ == '__main__':
