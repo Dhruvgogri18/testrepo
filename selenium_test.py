@@ -12,6 +12,8 @@ usernames = ["dhruvgogri014@gmail.com"]
 passwords = ["Dg9892211065@"]
  
 def login_and_download_file(url, username, password, file_suffix):
+    current_dir = os.getcwd()
+
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
@@ -20,7 +22,7 @@ def login_and_download_file(url, username, password, file_suffix):
     chrome_options.add_argument("--window-size=1920,1080")
  
     prefs = {
-        "download.default_directory": r"/tmp",
+        "download.default_directory": current_dir,
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
@@ -65,7 +67,7 @@ def login_and_download_file(url, username, password, file_suffix):
  
         driver.save_screenshot('after_click.png')
  
-        download_dir = r"/tmp"
+        download_dir = current_dir
         file_name = "profit_and_loss.xlsx"
         print("Files in download directory before wait:", os.listdir(download_dir))
         if wait_for_file(download_dir, file_name):
