@@ -1,7 +1,7 @@
 import pandas as pd
 import os
-def read_profit_and_loss_tab(download_dir, file_name):
-   if os.path.exists(file_path):
+def read_profit_and_loss_tab(file_name):
+   if file_name:
        # Read the Excel file
        try:
            # Load only the "Profit and Loss" sheet
@@ -12,7 +12,7 @@ def read_profit_and_loss_tab(download_dir, file_name):
        except Exception as e:
            print(f"Error reading Excel file or extracting Profit and Loss tab: {e}")
    else:
-       print(f"File {file_name} not found in {download_dir}")
+       print(f"File {file_name} not found")
 if __name__ == '__main__':
    file_name = "Reliance Industr.xlsx"
    read_profit_and_loss_tab(download_dir, file_name)
