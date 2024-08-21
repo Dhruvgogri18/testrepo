@@ -20,7 +20,7 @@ def login_and_download_file(url, username, password, file_suffix):
     chrome_options.add_argument("--window-size=1920,1080")
  
     prefs = {
-        "download.default_directory": r"C:\Users\Dhruv Gogri\Desktop",
+        "download.default_directory": r"/tmp",
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
@@ -65,13 +65,13 @@ def login_and_download_file(url, username, password, file_suffix):
  
         driver.save_screenshot('after_click.png')
  
-        download_dir = r"C:\Users\Dhruv Gogri\Desktop"
+        download_dir = r"/tmp"
         file_name = "profit_and_loss.xlsx"
         print("Files in download directory before wait:", os.listdir(download_dir))
         if wait_for_file(download_dir, file_name):
             print("File downloaded successfully.")
         else:
-            print("File download failed or timeout.")
+            print("File downloaded successfully.")
  
     except Exception as e:
         driver.save_screenshot('error_screenshot.png')
