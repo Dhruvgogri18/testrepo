@@ -62,10 +62,10 @@ def scrape_reliance_data(session):
 def save_to_mysql(df, db, user, password, host, port):
     engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
     try:
-        df.to_sql('financial_data', con=engine, if_exists='replace', index=True, index_label='id', dtype={'id': Integer})
+        df.to_sql('profit_and_loss', con=engine, if_exists='replace', index=True, index_label='id', dtype={'id': Integer})
         with engine.connect() as connection:
             alter_table_sql = """
-                ALTER TABLE financial_data
+                ALTER TABLE profit_and_loss
                 ADD PRIMARY KEY (id);
             """
             connection.execute(text(alter_table_sql))
