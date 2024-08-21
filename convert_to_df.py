@@ -15,4 +15,4 @@ def read_profit_and_loss_tab(file_name):
        print(f"File {file_name} not found")
 if __name__ == '__main__':
    file_name = "Reliance Industr.xlsx"
-   read_profit_and_loss_tab(download_dir, file_name)
+   read_profit_and_loss_tab(download_dir)
