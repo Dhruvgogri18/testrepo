@@ -1,5 +1,5 @@
 # Export environment variables
-export VAULT_ADDR='http://192.168.1.51:8200'
+export VAULT_ADDR='http://192.168.1.60:8200'
 export VAULT_TOKEN='root'
 
 # Fetch credentials from Vault and store them in variables
