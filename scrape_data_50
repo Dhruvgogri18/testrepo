@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import text
 import time
 import numpy as np
- 
+import argparse
 def login_to_screener(email, password):
    session = requests.Session()
    login_url = "https://www.screener.in/login/?"
@@ -32,9 +32,9 @@ def login_to_screener(email, password):
 def scrape_company_data(session, company_symbol, company_id, company_name):
    urls = [
        f"https://www.screener.in/company/{company_symbol}/consolidated/",
-       f"https://www.screener.in/company/{company_symbol}/"  
+       f"https://www.screener.in/company/{company_symbol}/"
    ]
-   df, company_df, df_ttm = None, None, None
+   df, company_df, df_ttm, narration_df = None, None, None, pd.DataFrame(columns=['Narration'])
    for url in urls:
        try:
            search_response = session.get(url)
@@ -63,19 +63,16 @@ def scrape_company_data(session, company_symbol, company_id, company_name):
                            df_ttm['TTM'] = pd.to_numeric(df_ttm['TTM'], errors='coerce').fillna(0).astype(int)
                            df_ttm = df_ttm.assign(Company_ID=company_id)
                            df_ttm = df_ttm.reset_index(drop=True)
-
                            company_df = pd.DataFrame({
                                'Company_ID': [company_id],
                                'Company': [company_name]
                            })
-
-                           
                            company_df.reset_index(drop=True)
                            df = df.drop(columns=['TTM'])
                            df = pd.melt(df, id_vars=['Narration'], var_name='Year', value_name='Value')
                            df = df.merge(df_ttm, on='Narration', how='inner')
-                           df['Value'] = df['Value'].str.replace(',', '')  
-                           df['Value'] = df['Value'].str.replace('%', '')  
+                           df['Value'] = df['Value'].str.replace(',', '')
+                           df['Value'] = df['Value'].str.replace('%', '')
                            df['Value'] = pd.to_numeric(df['Value'], errors='coerce').fillna(0)
                            df['Company_ID'] = company_id
                            df['Percent_change'] = df.groupby('Narration')['Value'].pct_change() * 100
@@ -84,13 +81,11 @@ def scrape_company_data(session, company_symbol, company_id, company_name):
                            df['Percent_change'] = df['Percent_change'].round(2)
                            df = df.sort_values(by=['Narration', 'Year']).reset_index(drop=True)
                            df = df.drop(columns=['TTM'], errors='ignore')
-
                            narration_df = pd.DataFrame({
                                'Narration': df['Narration'].unique()
                             })
                            narration_df.reset_index(drop=True)
-                           
-                           return df, company_df, df_ttm,narration_df
+                           return df, company_df, df_ttm, narration_df
                        else:
                            print("'TTM' column not found in DataFrame")
                            continue
@@ -101,16 +96,12 @@ def scrape_company_data(session, company_symbol, company_id, company_name):
                print(f"Failed to retrieve data from {url}. Status code: {search_response.status_code}")
                continue
        except Exception as e:
-           print(f"Exception occurred while retrieving data from {url}: {e}")
+           print(f"Error: {e}")
            continue
-   print(f"Failed to retrieve data for {company_symbol} from all URLs")
-   return None, None, None,None
-   
+   return df, company_df, df_ttm, narration_df
+
 def save_to_mysql(df, company_df, df_ttm, db, user, password, host, port):
     engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{db}")
-
-    # df = df.drop(columns=['Narration'], errors='ignore')
-    # df_ttm = df_ttm.drop(columns=['Narration'], errors='ignore')
 
     try:
         # Append new data to existing tables
@@ -120,9 +111,6 @@ def save_to_mysql(df, company_df, df_ttm, db, user, password, host, port):
         narration_df.to_sql('n', con=engine, if_exists='replace', index=True, index_label='id', dtype={'id': Integer})
  
         with engine.connect() as connection:
-            # Execute SQL statements one by one
-            # connection.execute(text("ALTER TABLE f ADD COLUMN ttm_id INT;"))
-
             connection.execute(text("UPDATE f JOIN t ON f.Narration = t.Narration and f.Company_id = t.company_id SET f.ttm_id = t.id;"))
             connection.execute(text("UPDATE t JOIN n ON t.Narration = n.Narration SET t.n_id = n.id;"))
             connection.execute(text("UPDATE f JOIN n ON f.Narration = n.Narration SET f.n_id = n.id;"))
@@ -140,6 +128,7 @@ def save_to_mysql(df, company_df, df_ttm, db, user, password, host, port):
         print(f"Error: {e}")
     finally:
        engine.dispose()
+
 def read_company_names_from_csv(file_path):
    try:
        df = pd.read_csv(file_path)
@@ -159,32 +148,34 @@ def read_company_names_from_csv(file_path):
    except Exception as e:
        print(f"Error reading CSV file: {e}")
        return None, None
-# Replace these values with your actual credentials and database details
-email = "dhruvgogri014@gmail.com"
-password = "Dg9892211065@"
-db = "connect_test"
-user = "root"
-pw = "root"
-host = "192.168.1.60"
-port = "3306"
-csv_file_path = "ind_nifty50list.csv"
-company_symbols, company_names = read_company_names_from_csv(csv_file_path)
-session = login_to_screener(email, password)
-if session:
-   all_company_df = pd.DataFrame(columns=['Company_ID', 'Company'])
-   all_df_ttm = pd.DataFrame(columns=['n_id' , 'TTM', 'Company_ID' ])
-   all_df = pd.DataFrame(columns=['n_id' , 'Year', 'Value', 'Company_ID', 'Percent_change', 'ttm_id' ])
-   all_narration_df = pd.DataFrame(columns=['Narration'])
-   company_id = 1
-   for symbol, name in zip(company_symbols, company_names):
-       df, company_df, df_ttm, narration_df = scrape_company_data(session, symbol, company_id, name)
-       if df is not None and company_df is not None and df_ttm is not None and narration_df is not None:
-           all_df = pd.concat([all_df, df], ignore_index=True)
-           all_company_df = pd.concat([all_company_df, company_df], ignore_index=True)
-           all_df_ttm = pd.concat([all_df_ttm, df_ttm], ignore_index=True)
-           all_narration_df = pd.concat([all_narration_df, narration_df], ignore_index=True)
-           company_id += 1
-           break
-        
-       time.sleep(1.5)  
-   save_to_mysql(all_df, all_company_df, all_df_ttm, db, user, pw, host, port)
+
+if __name__ == "__main__":
+   parser = argparse.ArgumentParser(description="Scrape and store company data")
+   parser.add_argument('--email', required=True, help='Email for Screener.in')
+   parser.add_argument('--password', required=True, help='Password for Screener.in')
+   parser.add_argument('--db', required=True, help='MySQL database name')
+   parser.add_argument('--user', required=True, help='MySQL username')
+   parser.add_argument('--pw', required=True, help='MySQL password')
+   parser.add_argument('--host', required=True, help='MySQL host')
+   parser.add_argument('--port', required=True, help='MySQL port')
+   parser.add_argument('--csv_file', required=True, help='Path to CSV file with company data')
+   args = parser.parse_args()
+   company_symbols, company_names = read_company_names_from_csv(args.csv_file)
+   session = login_to_screener(args.email, args.password)
+   if session and company_symbols and company_names:
+       all_company_df = pd.DataFrame(columns=['Company_ID', 'Company'])
+       all_df_ttm = pd.DataFrame(columns=['n_id', 'TTM', 'Company_ID'])
+       all_df = pd.DataFrame(columns=['n_id', 'Year', 'Value', 'Company_ID', 'Percent_change', 'TTM_ID'])
+       all_narration_df = pd.DataFrame(columns=['Narration'])
+       company_id = 1
+       for symbol, name in zip(company_symbols, company_names):
+           df, company_df, df_ttm, narration_df = scrape_company_data(session, symbol, company_id, name)
+           if df is not None and company_df is not None and df_ttm is not None and narration_df is not None:
+               all_df = pd.concat([all_df, df], ignore_index=True)
+               all_company_df = pd.concat([all_company_df, company_df], ignore_index=True)
+               all_df_ttm = pd.concat([all_df_ttm, df_ttm], ignore_index=True)
+               all_narration_df = pd.concat([all_narration_df, narration_df], ignore_index=True)
+               company_id += 1
+               time.sleep(1.5)
+
+       save_to_mysql(all_df, all_company_df, all_df_ttm, args.db, args.user, args.pw, args.host, args.port)
