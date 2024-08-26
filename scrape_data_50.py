@@ -162,7 +162,7 @@ if __name__ == "__main__":
    args = parser.parse_args()
    company_symbols, company_names = read_company_names_from_csv(args.csv_file)
    session = login_to_screener(args.email, args.password)
-   if session and company_symbols and company_names:
+   if session:
        all_company_df = pd.DataFrame(columns=['Company_ID', 'Company'])
        all_df_ttm = pd.DataFrame(columns=['n_id', 'TTM', 'Company_ID'])
        all_df = pd.DataFrame(columns=['n_id', 'Year', 'Value', 'Company_ID', 'Percent_change', 'TTM_ID'])
