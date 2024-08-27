@@ -122,7 +122,7 @@ def save_to_mysql(df, company_df, df_ttm, db, user, password, host, port):
             connection.execute(text("ALTER TABLE t ADD PRIMARY KEY (id);"))
             connection.execute(text("ALTER TABLE n ADD PRIMARY KEY (id);"))
  
-        print("Data saved to MySQL with id column set as primary key")
+        print("Data saved to MySQL")
  
     except SQLAlchemyError as e:
         print(f"Error: {e}")
