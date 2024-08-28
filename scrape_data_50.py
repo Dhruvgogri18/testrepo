@@ -69,7 +69,7 @@ def scrape_company_data(session, company_symbol, company_id, company_name):
                            })
                            company_df.reset_index(drop=True)
                            df = df.drop(columns=['TTM'])
-                           df = pd.melt(df, id_vars=['Narration'], var_name='Year', value_name='Value')
+                           df = pd.melt(df, id_vars=['Narration'], var_name='Financial_Year', value_name='Value')
                            df = df.merge(df_ttm, on='Narration', how='inner')
                            df['Value'] = df['Value'].str.replace(',', '')
                            df['Value'] = df['Value'].str.replace('%', '')
@@ -79,7 +79,7 @@ def scrape_company_data(session, company_symbol, company_id, company_name):
                            df['Percent_change'] = df['Percent_change'].replace([np.inf, -np.inf], np.nan)
                            df['Percent_change'] = df['Percent_change'].where(pd.notnull(df['Percent_change']), None)
                            df['Percent_change'] = df['Percent_change'].round(2)
-                           df = df.sort_values(by=['Narration', 'Year']).reset_index(drop=True)
+                           df = df.sort_values(by=['Narration', 'Financial_Year']).reset_index(drop=True)
                            df = df.drop(columns=['TTM'], errors='ignore')
                            narration_df = pd.DataFrame({
                                'Narration': df['Narration'].unique()
@@ -144,7 +144,7 @@ def read_company_names_from_csv(file_path):
            return company_symbols, company_names
        else:
            print("Required columns not found in the CSV file.")
-           return None, None
+           return None, None`
    except Exception as e:
        print(f"Error reading CSV file: {e}")
        return None, None
@@ -165,7 +165,7 @@ if __name__ == "__main__":
    if session:
        all_company_df = pd.DataFrame(columns=['Company_ID', 'Company'])
        all_df_ttm = pd.DataFrame(columns=['n_id', 'TTM', 'Company_ID'])
-       all_df = pd.DataFrame(columns=['n_id', 'Year', 'Value', 'Company_ID', 'Percent_change', 'TTM_ID'])
+       all_df = pd.DataFrame(columns=['n_id', 'Financial_Year', 'Value', 'Company_ID', 'Percent_change', 'TTM_ID'])
        all_narration_df = pd.DataFrame(columns=['Narration'])
        company_id = 1
        for symbol, name in zip(company_symbols, company_names):
