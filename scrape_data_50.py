@@ -144,7 +144,7 @@ def read_company_names_from_csv(file_path):
            return company_symbols, company_names
        else:
            print("Required columns not found in the CSV file.")
-           return None, None`
+           return None, None
    except Exception as e:
        print(f"Error reading CSV file: {e}")
        return None, None
