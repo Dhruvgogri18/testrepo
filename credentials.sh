@@ -1,6 +1,5 @@
 # Export environment variables
 export VAULT_ADDR='http://192.168.3.19:8200'
-export VAULT_TOKEN='root'
 
 # Fetch credentials from Vault and store them in variables
 EMAIL=$(vault kv get -field=login_email secret/data/screener)
