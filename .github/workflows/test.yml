@@ -1,0 +1,51 @@
+name: Scrape and Store
+on:
+ push:
+   branches:
+     - main
+ pull_request:
+   branches:
+     - main
+jobs:
+ fetch-credentials:
+   runs-on: ubuntu-latest
+   steps:
+     - name: Checkout repository
+       uses: actions/checkout@v3
+     - name: Set up Vault
+       run: sudo apt-get install vault
+     - name: Fetch credentials from Vault
+       env:
+         VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+         VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}  # Using the root token stored as a GitHub Secret
+       run: |
+         chmod +x ./credentials.sh
+         ./credentials.sh
+         ls -l
+       shell: bash
+     - name: Save credentials
+       id: save-credentials
+       run: |
+         echo "::set-output name=username::$(cat ./credentials/username)"
+         echo "::set-output name=password::$(cat ./credentials/password)"
+       shell: bash
+ scrape-and-store:
+   runs-on: ubuntu-latest
+   needs: fetch-credentials
+   steps:
+     - name: Checkout repository
+       uses: actions/checkout@v3
+     - name: Set up Python
+       uses: actions/setup-python@v4
+       with:
+         python-version: 3.9
+     - name: Install dependencies
+       run: pip install -r ./git-repo/requirements.txt
+     - name: Run scraper
+       env:
+         EMAIL: ${{ steps.save-credentials.outputs.username }}
+         PASSWORD: ${{ steps.save-credentials.outputs.password }}
+       run: |
+         chmod +x ./git-repo/run_scraper.sh
+         ./git-repo/run_scraper.sh
+       shell: bash
