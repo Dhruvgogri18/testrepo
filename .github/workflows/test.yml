@@ -12,12 +12,18 @@ jobs:
    steps:
      - name: Checkout repository
        uses: actions/checkout@v3
-     - name: Set up Vault
+     - name: Set up HashiCorp APT Repository
+       run: |
+         curl -fsSL https://apt.releases.hashicorp.com/gpg"> https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+         sudo apt-add-repository "deb [arch=amd64]
+         https://apt.releases.hashicorp.com$(lsb_release -cs) main"
+         sudo apt-get update
+     - name: Install Vault
        run: sudo apt-get install vault
      - name: Fetch credentials from Vault
        env:
          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
-         VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}  # Using the root token stored as a GitHub Secret
+         VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
        run: |
          chmod +x ./credentials.sh
          ./credentials.sh
