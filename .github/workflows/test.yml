@@ -20,8 +20,8 @@ jobs:
        run: sudo apt-get install vault
      - name: Fetch credentials from Vault
        env:
-         VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
-         VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+         VAULT_ADDR: ${{ SECRETS.VAULT_ADDR }}
+         VAULT_TOKEN: ${{ SECRETS.VAULT_TOKEN }}
        run: |
          chmod +x ./credentials.sh
          ./credentials.sh
