@@ -12,19 +12,12 @@ jobs:
    steps:
      - name: Checkout repository
        uses: actions/checkout@v3
-     - name: Set up HashiCorp APT Repository
-       run: |
-         curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - && sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" && sudo apt-get update
-         sudo apt-get update
-     - name: Install Vault
-       run: sudo apt-get install vault
-     - name: Fetch credentials from Vault
+     - name: Fetch credentials from Github Secret
        env:
-         VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
-         VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+         LOGIN_EMAIL: ${{ secrets.LOGIN_EMAIL }}
+         LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
        run: |
-         chmod +x ./credentials.sh
-         ./credentials.sh
+         echo LOGIN_EMAIL
          ls -l
        shell: bash
      - name: Save credentials
@@ -47,9 +40,9 @@ jobs:
        run: pip install -r ./requirements.txt
      - name: Run scraper
        env:
-         EMAIL: ${{ steps.save-credentials.outputs.username }}
-         PASSWORD: ${{ steps.save-credentials.outputs.password }}
+         EMAIL: ${{ secrets.LOGIN_EMAIL }}
+         PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
        run: |
-         chmod +x ./git-repo/run_scraper.sh
-         ./git-repo/run_scraper.sh
+         chmod +x ./run_scraper.sh
+         ./run_scraper.sh
        shell: bash
